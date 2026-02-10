@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NDT Concrete Simulator — RH & UPV (HTML)</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- jsPDF + html2canvas -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+      :root {
+        --bg: #0f1724;
+        --glass: rgba(255, 255, 255, 0.06);
+        --accent1: #ff0096;
+        --accent2: #00e0ff;
+        --success: #2dd4bf;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --card: rgba(255, 255, 255, 0.03);
+        --text: #e6eef8;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: linear-gradient(180deg, #071023 0%, #0b1220 100%);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 18px;
+      }
+      /* Landing */
+      .landing {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        gap: 18px;
+      }
+      .landing h1 {
+        font-size: clamp(20px, 3.5vw, 28px);
+        margin: 0;
+      }
+      .landing p {
+        margin: 0;
+        font-size: clamp(16px, 2.2vw, 18px);
+      }
+      .login-btn {
+        display: inline-block;
+        padding: 14px 34px;
+        border-radius: 999px;
+        color: white;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        background: linear-gradient(90deg, var(--accent1), var(--accent2));
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        outline: none;
+        border: none;
+      }
+      .login-btn:focus {
+        box-shadow: 0 0 0 4px rgba(0, 216, 255, 0.12);
+      }
+      .login-btn .glow {
+        position: absolute;
+        inset: 0;
+        mix-blend-mode: screen;
+        opacity: 0.14;
+        animation: mask 6s linear infinite;
+      }
+      @keyframes mask {
+        0% {
+          transform: translateX(-20%);
+        }
+        50% {
+          transform: translateX(20%);
+        }
+        100% {
+          transform: translateX(-20%);
+        }
+      }
+      .login-btn:hover {
+        filter: brightness(1.06);
+      }
+      .animate-text {
+        display: inline-block;
+        animation: textPulse 2.4s infinite;
+      }
+      @keyframes textPulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.85;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      /* Glass login */
+      .fullscreen-bg {
+        background-image: url("https://images.unsplash.com/photo-1560185127-6ec8d6f5a8f2?auto=format&fit=crop&w=1600&q=60");
+        background-size: cover;
+        background-position: center;
+        min-height: 100vh;
+      }
+      .glass-card {
+        backdrop-filter: blur(8px);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.04),
+          rgba(255, 255, 255, 0.02)
+        );
+        border-radius: 14px;
+        padding: 22px;
+        max-width: 420px;
+        margin: 40px auto;
+        color: var(--text);
+        box-shadow: 0 8px 30px rgba(2, 6, 23, 0.7);
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text);
+        outline: none;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        box-shadow: 0 0 0 4px rgba(0, 216, 255, 0.06);
+        border-color: rgba(0, 216, 255, 0.12);
+      }
+      .muted {
+        color: rgba(230, 238, 248, 0.66);
+        font-size: 13px;
+      }
+      .btn {
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        background: linear-gradient(90deg, var(--accent1), var(--accent2));
+        color: white;
+        font-weight: 600;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      /* Navbar */
+      nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: var(--glass);
+        margin: 16px 0;
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .site-name {
+        font-weight: 700;
+      }
+      .logo-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent1), var(--accent2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-origin: center;
+      }
+      .nav-links {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+      }
+      .nav-links a {
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+      /* layout */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      @media (min-width: 880px) {
+        .grid {
+          grid-template-columns: 2fr 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.02);
+      }
+      .workflow {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .workflow ol {
+        margin: 0 0 0 18px;
+        padding: 0;
+      }
+      /* Test area */
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .small {
+        font-size: 13px;
+        padding: 6px 8px;
+        border-radius: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        padding: 8px;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.03);
+        text-align: left;
+      }
+      .stats {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .stat {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.02),
+          rgba(255, 255, 255, 0.01)
+        );
+        padding: 8px;
+        border-radius: 8px;
+        min-width: 120px;
+      }
+      .alert {
+        padding: 8px;
+        border-radius: 8px;
+      }
+      .alert.warn {
+        background: rgba(245, 158, 11, 0.12);
+        color: var(--warning);
+      }
+      .alert.danger {
+        background: rgba(239, 68, 68, 0.08);
+        color: var(--danger);
+      }
+      .footer {
+        margin-top: 28px;
+        padding: 18px;
+        text-align: center;
+        color: rgba(230, 238, 248, 0.6);
+        font-size: 13px;
+      }
+      /* focus and accessibility */
+      :focus {
+        outline: 3px solid rgba(0, 216, 255, 0.08);
+        outline-offset: 2px;
+      }
+      /* responsive tweaks */
+      @media (max-width: 600px) {
+        nav {
+          padding: 10px;
+        }
+        .logo-circle {
+          width: 40px;
+          height: 40px;
+        }
+        .glass-card {
+          margin: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Landing -->
+      <main
+        id="landing"
+        class="landing container"
+        aria-hidden="false"
+        role="main"
+      >
+        <div style="max-width: 760px">
+          <!-- exact required text (default) -->
+          <h1>Welcome to NDT Concrete Simulator</h1>
+          <p>Simulate Rebound Hammer & UPV tests — follow IS guidelines</p>
+          <p>Quick, repeatable, and report-ready results</p>
+          <button id="to-login" class="login-btn" aria-label="Click to Login">
+            <span class="glow" aria-hidden="true"></span>
+            <span class="animate-text">Click to Login</span>
+          </button>
+        </div>
+      </main>
+
+      <!-- Login Screen -->
+      <section
+        id="login-screen"
+        class="fullscreen-bg"
+        style="display: none"
+        aria-hidden="true"
+      >
+        <div class="container">
+          <div
+            class="glass-card"
+            role="dialog"
+            aria-label="Login form"
+            aria-modal="true"
+          >
+            <h2 style="margin-top: 0">Sign in</h2>
+            <p class="muted">
+              Demo credentials: <strong>demo</strong> / <strong>demo</strong>
+            </p>
+            <form id="login-form" onsubmit="return false" autocomplete="on">
+              <label for="userId">User ID</label>
+              <input id="userId" name="userId" aria-label="User ID" required />
+              <label for="password" style="margin-top: 8px">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                aria-label="Password"
+                required
+              />
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-top: 8px;
+                "
+              >
+                <label class="muted"
+                  ><input id="remember" type="checkbox" /> Remember me</label
+                >
+                <a href="#" id="forgot" class="muted">Forgot password</a>
+              </div>
+              <div
+                id="login-error"
+                class="muted"
+                role="alert"
+                style="margin-top: 8px; display: none; color: var(--danger)"
+              ></div>
+              <div style="margin-top: 12px; display: flex; gap: 8px">
+                <button id="login-btn" class="btn" type="submit">Login</button>
+                <button
+                  id="login-cancel"
+                  class="btn"
+                  style="
+                    background: transparent;
+                    border: 1px solid rgba(255, 255, 255, 0.04);
+                  "
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main App (Dashboard / Test / Contact) -->
+      <section id="app-main" style="display: none" aria-hidden="true">
+        <div class="container" role="application">
+          <!-- Navbar -->
+          <nav role="navigation" aria-label="Main navigation">
+            <div class="nav-left">
+              <div class="site-name" aria-hidden="true">RK NDT</div>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex: 1;
+              "
+            >
+              <div
+                class="logo-circle"
+                id="logo"
+                tabindex="0"
+                title="RK NDT Logo"
+                aria-hidden="false"
+                role="img"
+              >
+                RK
+              </div>
+            </div>
+            <div class="nav-links" id="nav-links">
+              <a href="#" id="nav-home">Home</a>
+              <a href="#" id="nav-test">Test</a>
+              <a href="#" id="nav-contact">Contact</a>
+            </div>
+          </nav>
+
+          <!-- Dashboard -->
+          <main id="dashboard" style="display: block" aria-live="polite">
+            <div class="grid" style="margin-top: 12px">
+              <section class="card">
+                <h3>About Concrete & NDT</h3>
+                <p style="margin-top: 8px">
+                  Concrete is a composite material composed of aggregates,
+                  cement and water. NDT (non-destructive testing) verifies
+                  uniformity and relative quality — it does
+                  <strong>NOT</strong> provide a single absolute strength value.
+                  Use NDT as verification and screening, and confirm critical
+                  results with lab testing.
+                </p>
+                <p style="margin-top: 8px">
+                  Impact-based rebound hammer measures surface hardness; UPV
+                  measures wave speed through material. Correlations provide
+                  estimated strength — insert exact IS correlation/clause in the
+                  code where noted.
+                </p>
+              </section>
+
+              <aside>
+                <div class="card">
+                  <h4>Quick Actions</h4>
+                  <div
+                    style="
+                      margin-top: 10px;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 8px;
+                    "
+                  >
+                    <button
+                      class="small"
+                      id="start-rh"
+                      aria-controls="test-area"
+                    >
+                      Start RH Test
+                    </button>
+                    <button
+                      class="small"
+                      id="start-upv"
+                      aria-controls="test-area"
+                    >
+                      Start UPV Test
+                    </button>
+                    <button class="small" id="view-reports">
+                      View Reports
+                    </button>
+                    <label class="muted"
+                      >Upload Site Photos
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/*"
+                        style="display: block; margin-top: 6px"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div class="card" style="margin-top: 12px">
+                  <h4>Notes</h4>
+                  <p class="muted" style="margin-top: 8px">
+                    Minimum reading enforcement prevents final verification.
+                    High CoV will show a warning. All IS clause numbers &
+                    correlation formulas are placeholders in code: replace with
+                    actual IS values.
+                  </p>
+                </div>
+              </aside>
+
+              <!-- workflows -->
+              <div
+                class="card"
+                style="
+                  grid-column: 1/-1;
+                  margin-top: 12px;
+                  display: flex;
+                  gap: 12px;
+                  flex-wrap: wrap;
+                "
+              >
+                <div style="flex: 1; min-width: 260px">
+                  <h4>Rebound Hammer Workflow</h4>
+                  <ol>
+                    <li>Prepare surface</li>
+                    <li>Take 10 readings at specified pattern</li>
+                    <li>Discard outliers</li>
+                    <li>Use correlation to estimate strength</li>
+                    <li>Report & recommend action</li>
+                  </ol>
+                  <button class="small" id="rh-code">
+                    See IS Code & thresholds
+                  </button>
+                </div>
+                <div style="flex: 1; min-width: 260px">
+                  <h4>UPV Workflow</h4>
+                  <ol>
+                    <li>Select direct / semi-direct / indirect</li>
+                    <li>Measure path length</li>
+                    <li>Take 7–10 readings</li>
+                    <li>Compute velocity</li>
+                    <li>Compare with standard</li>
+                    <li>Report</li>
+                  </ol>
+                  <button class="small" id="upv-code">
+                    See IS Code & thresholds
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <!-- Test Area -->
+          <section id="test-area" style="display: none; margin-top: 18px">
+            <div
+              style="
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                align-items: center;
+              "
+            >
+              <div class="card" style="flex: 1; min-width: 280px">
+                <label for="mode-select">Mode</label>
+                <select id="mode-select" aria-label="Select test mode">
+                  <option value="RH">Rebound Hammer (RH)</option>
+                  <option value="UPV">Ultrasonic Pulse Velocity (UPV)</option>
+                </select>
+
+                <hr
+                  style="
+                    margin: 10px 0;
+                    border: none;
+                    border-top: 1px solid rgba(255, 255, 255, 0.03);
+                  "
+                />
+
+                <h4>Test Info</h4>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                  "
+                >
+                  <label
+                    >Client name<input
+                      id="meta-client"
+                      aria-label="Client name"
+                  /></label>
+                  <label
+                    >Site location<input
+                      id="meta-site"
+                      aria-label="Site location"
+                  /></label>
+                  <label
+                    >Building type
+                    <select id="meta-type" aria-label="Building type">
+                      <option>Residential</option>
+                      <option>Commercial</option>
+                      <option>Industrial</option>
+                    </select>
+                  </label>
+                  <label
+                    >Concrete grade
+                    <select id="meta-grade" aria-label="Concrete grade">
+                      <option>M15</option>
+                      <option>M20</option>
+                      <option selected>M25</option>
+                      <option>M30</option>
+                    </select>
+                  </label>
+                  <label
+                    >Building age (years)<input
+                      id="meta-age"
+                      type="number"
+                      min="0"
+                      value="0"
+                      aria-label="Building age"
+                  /></label>
+                  <label
+                    >Sample ID<input
+                      id="meta-sample"
+                      aria-label="Sample ID"
+                      value="S1"
+                  /></label>
+                  <label
+                    >Tester name<input
+                      id="meta-tester"
+                      aria-label="Tester name"
+                      value="RK"
+                  /></label>
+                  <label
+                    >Date<input
+                      id="meta-date"
+                      type="date"
+                      aria-label="Test date"
+                  /></label>
+                </div>
+                <div style="margin-top: 8px">
+                  <label>Notes (optional)</label>
+                  <textarea
+                    id="meta-notes"
+                    rows="2"
+                    placeholder="Notes..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="card" style="flex: 2; min-width: 420px">
+                <h4 id="test-title">Rebound Hammer Test</h4>
+
+                <!-- RBH location / UPV test type -->
+                <div
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                    margin-top: 8px;
+                  "
+                >
+                  <div id="rbh-controls">
+                    <label
+                      >RBH Location
+                      <select id="rbh-location" aria-label="RBH location">
+                        <option value="top">Top</option>
+                        <option value="middle" selected>Middle</option>
+                        <option value="bottom">Bottom</option>
+                      </select>
+                    </label>
+                    <label
+                      >Point type
+                      <select id="rbh-point" aria-label="RBH point type">
+                        <option value="C1">C1</option>
+                        <option value="B1">B1</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div id="upv-controls" style="display: none">
+                    <label
+                      >UPV Type
+                      <select id="upv-type" aria-label="UPV type">
+                        <option value="direct">Direct</option>
+                        <option value="semi">Semi-Direct</option>
+                        <option value="indirect">Indirect</option>
+                      </select>
+                    </label>
+                    <label
+                      >Path length (mm)<input
+                        id="upv-path"
+                        type="number"
+                        min="1"
+                        value="300"
+                    /></label>
+                  </div>
+                </div>
+
+                <hr
+                  style="
+                    margin: 10px 0;
+                    border: none;
+                    border-top: 1px solid rgba(255, 255, 255, 0.03);
+                  "
+                />
+
+                <div>
+                  <label for="single-reading">Add reading</label>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 8px;
+                      align-items: center;
+                      margin-top: 6px;
+                    "
+                  >
+                    <input
+                      id="single-reading"
+                      aria-label="Reading input"
+                      placeholder="e.g. 33 (RH) or 3.9 (UPV m/s)"
+                    />
+                    <button id="add-reading" class="btn">Add</button>
+                    <input
+                      id="excel-upload"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      style="display: none"
+                      aria-label="Upload Excel file"
+                    />
+                    <button
+                      id="bulk-paste"
+                      class="btn"
+                      style="
+                        background: transparent;
+                        border: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      Bulk paste
+                    </button>
+                    <button
+                      id="auto-sample"
+                      class="btn"
+                      style="
+                        background: transparent;
+                        border: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      Auto-sample
+                    </button>
+                  </div>
+                  <div class="muted" style="margin-top: 6px">
+                    Bulk paste accepts Excel files (.xlsx, .xls) or manual
+                    input.
+                  </div>
+                </div>
+
+                <div style="margin-top: 12px">
+                  <h4>
+                    Readings (<span id="reading-count">0</span>/<span
+                      id="required-count"
+                      >10</span
+                    >)
+                  </h4>
+                  <div
+                    style="max-height: 180px; overflow: auto; margin-top: 6px"
+                  >
+                    <table aria-live="polite">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Value</th>
+                          <th>Time</th>
+                          <th>Note</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody id="readings-table"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div
+                  style="
+                    margin-top: 12px;
+                    display: flex;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                    align-items: center;
+                  "
+                >
+                  <div class="stats" aria-hidden="false">
+                    <div class="stat">
+                      <div class="muted">Mean</div>
+                      <div id="s-mean">-</div>
+                    </div>
+                    <div class="stat">
+                      <div class="muted">Median</div>
+                      <div id="s-median">-</div>
+                    </div>
+                    <div class="stat">
+                      <div class="muted">Std Dev</div>
+                      <div id="s-sd">-</div>
+                    </div>
+                    <div class="stat">
+                      <div class="muted">CoV</div>
+                      <div id="s-cov">-</div>
+                    </div>
+                  </div>
+
+                  <div style="flex: 1; min-width: 160px">
+                    <div
+                      id="warnings"
+                      aria-live="assertive"
+                      style="min-height: 40px"
+                    ></div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 12px">
+                  <canvas
+                    id="main-chart"
+                    height="160"
+                    aria-label="Test chart"
+                  ></canvas>
+                </div>
+
+                <div style="margin-top: 10px; display: flex; gap: 10px">
+                  <button id="generate-pdf" class="btn">
+                    Generate Report (PDF)
+                  </button>
+                  <button
+                    id="finalize"
+                    class="btn"
+                    style="
+                      background: transparent;
+                      border: 1px solid rgba(255, 255, 255, 0.04);
+                    "
+                  >
+                    Finalize Verification
+                  </button>
+                  <button
+                    id="clear-readings"
+                    class="btn"
+                    style="
+                      background: transparent;
+                      border: 1px solid rgba(255, 255, 255, 0.04);
+                    "
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comparison & Suggestions -->
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-top: 12px;
+              "
+            >
+              <div class="card">
+                <h4>Comparison & Verdict (if RH & UPV exist)</h4>
+                <p class="muted">
+                  If both RH and UPV datasets are available, the app will
+                  compute a combined verdict: Good / Medium / Doubtful.
+                  Thresholds are placeholders — replace with IS values.
+                </p>
+                <div
+                  id="combined-verdict"
+                  style="margin-top: 8px; font-weight: 700"
+                >
+                  Insufficient data
+                </div>
+              </div>
+
+              <div class="card">
+                <h4>Assumptions & Suggestions</h4>
+                <p class="muted">
+                  Verdict categories: Good / Medium / Doubtful. Each category
+                  has 5 default suggestions that can be customized in code. See
+                  placeholders below.
+                </p>
+                <div style="margin-top: 10px">
+                  <strong>Example suggestions for "Doubtful":</strong>
+                  <ol id="suggestions">
+                    <li>Mark area for immediate load restriction</li>
+                    <li>Conduct core sampling & lab testing</li>
+                    <li>Repair with epoxy injection</li>
+                    <li>Monitor with strain gauges</li>
+                    <li>Reassess after repair (3 months)</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Contact -->
+          <section id="contact-area" style="display: none; margin-top: 18px">
+            <div class="card">
+              <h3>Contact & Feedback</h3>
+              <p class="muted">
+                Submit feedback. For production, wire this form to Google Forms
+                or your backend that writes to Google Sheets and triggers emails
+                (SendGrid / SMTP). A server webhook example is included in
+                comments below.
+              </p>
+              <form
+                id="contact-form"
+                onsubmit="return false"
+                style="margin-top: 12px"
+              >
+                <label>Name<input id="contact-name" required /></label>
+                <label style="margin-top: 8px"
+                  >Email<input id="contact-email" type="email" required
+                /></label>
+                <label style="margin-top: 8px"
+                  >Message<textarea
+                    id="contact-msg"
+                    rows="4"
+                    required
+                  ></textarea>
+                </label>
+                <div style="margin-top: 8px">
+                  <button id="contact-send" class="btn">Send</button>
+                </div>
+              </form>
+              <div style="margin-top: 12px">
+                <h4>Server webhook example (Node/Express)</h4>
+                <pre
+                  style="
+                    font-size: 12px;
+                    background: rgba(0, 0, 0, 0.12);
+                    padding: 8px;
+                    border-radius: 8px;
+                    overflow: auto;
+                    color: var(--text);
+                  "
+                >
+// POST /api/contact
+app.post('/api/contact', async (req, res) => {
+ const { name, email, message } = req.body;
+ // validate
+ // store to DB / Google Sheets
+ // send confirmation email (SendGrid / SMTP)
+ res.json({ ok: true });
+});
+             </pre
+                >
+              </div>
+            </div>
+          </section>
+
+          <div class="footer">
+            Done by RK & team • © <span id="year"></span> • version 0.1
+          </div>
+        </div>
+      </section>
+
+      <!-- Hidden printable report content (used for html2canvas/pdf) -->
+      <div
+        id="printable"
+        style="
+          position: fixed;
+          left: -9999px;
+          top: -9999px;
+          width: 1200px;
+          padding: 20px;
+          background: white;
+          color: #111;
+        "
+        aria-hidden="true"
+      ></div>
+    </div>
+
+    <script>
+      // -------------------------
+      // Basic client-side app state
+      // -------------------------
+      const state = {
+        user: null,
+        mode: "RH", // 'RH' or 'UPV'
+        readings: [], // current test readings: {value,ts,note}
+        upvPath: 300,
+        requiredCount: 10,
+        rhDatasetStore: null, // store last RH dataset for combined verdict
+        upvDatasetStore: null,
+      };
+
+      // Helper utilities
+      function mean(arr) {
+        if (!arr.length) return null;
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
+      }
+      function median(arr) {
+        if (!arr.length) return null;
+        const s = [...arr].sort((a, b) => a - b);
+        const n = s.length;
+        return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+      }
+      function sd(arr) {
+        if (!arr.length) return null;
+        const m = mean(arr);
+        return Math.sqrt(
+          arr.reduce((s, v) => s + Math.pow(v - m, 2), 0) / arr.length
+        );
+      }
+      function cov(arr) {
+        const m = mean(arr);
+        if (!m) return null;
+        return sd(arr) / m;
+      }
+
+      // DOM elements
+      const landing = document.getElementById("landing");
+      const loginScreen = document.getElementById("login-screen");
+      const appMain = document.getElementById("app-main");
+      const toLogin = document.getElementById("to-login");
+      const loginForm = document.getElementById("login-form");
+      const loginBtn = document.getElementById("login-btn");
+      const loginError = document.getElementById("login-error");
+      const loginCancel = document.getElementById("login-cancel");
+      const navHome = document.getElementById("nav-home");
+      const navTest = document.getElementById("nav-test");
+      const navContact = document.getElementById("nav-contact");
+      const startRH = document.getElementById("start-rh");
+      const startUPV = document.getElementById("start-upv");
+      const testArea = document.getElementById("test-area");
+      const dashboard = document.getElementById("dashboard");
+      const contactArea = document.getElementById("contact-area");
+      const modeSelect = document.getElementById("mode-select");
+      const testTitle = document.getElementById("test-title");
+      const addReadingBtn = document.getElementById("add-reading");
+      const singleInput = document.getElementById("single-reading");
+      const bulkPasteBtn = document.getElementById("bulk-paste");
+      const autoSampleBtn = document.getElementById("auto-sample");
+      const readingsTable = document.getElementById("readings-table");
+      const readingCount = document.getElementById("reading-count");
+      const requiredCountEl = document.getElementById("required-count");
+      const sMean = document.getElementById("s-mean"),
+        sMedian = document.getElementById("s-median"),
+        sSd = document.getElementById("s-sd"),
+        sCov = document.getElementById("s-cov");
+      const warnings = document.getElementById("warnings");
+      const generatePdfBtn = document.getElementById("generate-pdf");
+      const finalizeBtn = document.getElementById("finalize");
+      const clearReadingsBtn = document.getElementById("clear-readings");
+      const upvControls = document.getElementById("upv-controls"),
+        rbhControls = document.getElementById("rbh-controls");
+      const requiredCount = 10;
+      const mainChartEl = document.getElementById("main-chart");
+      let mainChart = null;
+
+      // set year
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      // show login
+      toLogin.addEventListener("click", () => {
+        landing.style.display = "none";
+        loginScreen.style.display = "block";
+        loginScreen.setAttribute("aria-hidden", "false");
+        landing.setAttribute("aria-hidden", "true");
+        document.getElementById("userId").focus();
+      });
+
+      // login handling (mocked)
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const userId = document.getElementById("userId").value.trim();
+        const pwd = document.getElementById("password").value.trim();
+        if (!userId || !pwd) {
+          loginError.style.display = "block";
+          loginError.textContent = "Please fill User ID and Password";
+          return;
+        }
+        if (userId === "demo" && pwd === "demo") {
+          state.user = { id: "demo", name: "Demo User" };
+          loginError.style.display = "none";
+          loginScreen.style.display = "none";
+          appMain.style.display = "block";
+          appMain.setAttribute("aria-hidden", "false");
+          document.getElementById("nav-home").focus();
+        } else {
+          loginError.style.display = "block";
+          loginError.textContent =
+            "Invalid credentials for demo. Use demo/demo";
+        }
+      });
+      loginCancel.addEventListener("click", () => {
+        loginScreen.style.display = "none";
+        landing.style.display = "block";
+        landing.setAttribute("aria-hidden", "false");
+      });
+
+      // navigation
+      navHome.addEventListener("click", () => {
+        dashboard.style.display = "block";
+        testArea.style.display = "none";
+        contactArea.style.display = "none";
+      });
+      navTest.addEventListener("click", () => {
+        dashboard.style.display = "none";
+        testArea.style.display = "block";
+        contactArea.style.display = "none";
+      });
+      navContact.addEventListener("click", () => {
+        dashboard.style.display = "none";
+        testArea.style.display = "none";
+        contactArea.style.display = "block";
+      });
+      startRH.addEventListener("click", () => {
+        openTest("RH");
+      });
+      startUPV.addEventListener("click", () => {
+        openTest("UPV");
+      });
+
+      function openTest(mode) {
+        state.mode = mode;
+        modeSelect.value = mode;
+        updateModeUI();
+        dashboard.style.display = "none";
+        testArea.style.display = "block";
+        contactArea.style.display = "none";
+      }
+
+      modeSelect.addEventListener("change", (e) => {
+        state.mode = e.target.value;
+        updateModeUI();
+        clearReadings();
+      });
+
+      function updateModeUI() {
+        testTitle.textContent =
+          state.mode === "RH" ? "Rebound Hammer Test" : "UPV Test";
+        document.getElementById("required-count").textContent = requiredCount;
+        if (state.mode === "UPV") {
+          upvControls.style.display = "block";
+          rbhControls.style.display = "none";
+        } else {
+          upvControls.style.display = "none";
+          rbhControls.style.display = "block";
+        }
+      }
+
+      // readings management
+      function addReading(value, note = "") {
+        const v = Number(value);
+        if (Number.isNaN(v)) return;
+        const item = { value: v, ts: new Date().toISOString(), note };
+        state.readings.push(item);
+        refreshReadings();
+      }
+
+      addReadingBtn.addEventListener("click", () => {
+        const v = singleInput.value.trim();
+        if (!v) return;
+        addReading(v);
+        singleInput.value = "";
+        singleInput.focus();
+      });
+
+      // Excel upload handler
+      const excelUpload = document.getElementById("excel-upload");
+
+      bulkPasteBtn.addEventListener("click", () => {
+        excelUpload.click();
+      });
+
+      excelUpload.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {
+              header: 1,
+            });
+
+            // Skip first row (header) and process columns A and B
+            const baseTime = new Date();
+            for (let i = 1; i < jsonData.length; i++) {
+              const row = jsonData[i];
+              if (row && row.length >= 2) {
+                const colA = row[0]; // # (index)
+                const colB = row[1]; // Value
+
+                const value = Number(colB);
+                if (!Number.isNaN(value)) {
+                  // Generate sequential timestamps (1 second apart)
+                  const timestamp = new Date(
+                    baseTime.getTime() + (i - 1) * 1000
+                  );
+                  const item = {
+                    value: value,
+                    ts: timestamp.toISOString(),
+                    note: `#${colA || i}`,
+                  };
+                  state.readings.push(item);
+                }
+              }
+            }
+            refreshReadings();
+            // Reset file input
+            excelUpload.value = "";
+          } catch (err) {
+            alert("Error reading Excel file: " + err.message);
+            excelUpload.value = "";
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      autoSampleBtn.addEventListener("click", () => {
+        if (state.mode === "RH") {
+          const sample = [32, 34, 31, 33, 35, 30, 32, 34, 33, 31];
+          sample.forEach((v) => addReading(v));
+        } else {
+          const sample = [
+            3.8, 3.9, 3.95, 3.85, 3.9, 3.88, 3.92, 3.9, 3.86, 3.91,
+          ];
+          sample.forEach((v) => addReading(v));
+        }
+      });
+
+      function removeReading(i) {
+        state.readings.splice(i, 1);
+        refreshReadings();
+      }
+
+      function clearReadings() {
+        state.readings = [];
+        refreshReadings();
+      }
+      clearReadingsBtn.addEventListener("click", clearReadings);
+
+      function refreshReadings() {
+        // update UI table
+        readingsTable.innerHTML = "";
+        state.readings.forEach((r, i) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${i + 1}</td><td>${r.value}</td><td>${new Date(
+            r.ts
+          ).toLocaleString()}</td><td>${
+            r.note || ""
+          }</td><td><button class="small" data-i="${i}">Del</button></td>`;
+          readingsTable.appendChild(tr);
+        });
+        readingsTable.querySelectorAll("button").forEach((btn) => {
+          btn.addEventListener("click", () =>
+            removeReading(Number(btn.dataset.i))
+          );
+        });
+        readingCount.textContent = state.readings.length;
+        updateStatsAndChart();
+      }
+
+      // stats & chart
+      function updateStatsAndChart() {
+        const vals = state.readings.map((r) => r.value);
+        const m = mean(vals),
+          med = median(vals),
+          sdv = sd(vals),
+          covv = cov(vals);
+        sMean.textContent = m === null ? "-" : m.toFixed(3);
+        sMedian.textContent = med === null ? "-" : med.toFixed(3);
+        sSd.textContent = sdv === null ? "-" : sdv.toFixed(3);
+        sCov.textContent = covv === null ? "-" : (covv * 100).toFixed(2) + "%";
+
+        // warnings
+        warnings.innerHTML = "";
+        if (vals.length < requiredCount) {
+          const w = document.createElement("div");
+          w.className = "alert warn";
+          w.textContent =
+            "Minimum readings not met. Final verification disabled.";
+          warnings.appendChild(w);
+        }
+        if (covv !== null && covv > 0.15) {
+          const w = document.createElement("div");
+          w.className = "alert danger";
+          w.textContent =
+            "High variability detected (CoV > 15%). Consider retest.";
+          warnings.appendChild(w);
+        }
+
+        // chart: standard dashed line (placeholder) and measured points
+        const labels = vals.map((_, i) => i + 1);
+        // Placeholder standard curve: for RH, map rebound -> strength via placeholder linear mapping
+        // IMPORTANT: Replace this mapping with the actual IS correlation formula/table
+        const standardData = vals.map((v) => {
+          if (state.mode === "RH") {
+            // PLACEHOLDER correlation (REPLACE WITH IS TABLE/FUNCTION)
+            // Example placeholder: strength = 0.5 * rebound + 0.5 (NOT real)
+            return v * 0.5 + 0.5;
+          } else {
+            // UPV: standard velocity band (placeholder)
+            return v; // identity placeholder
+          }
+        });
+        const measuredData = vals.slice();
+
+        const chartData = {
+          labels,
+          datasets: [
+            {
+              label: "Standard (placeholder)",
+              data: standardData,
+              borderDash: [6, 4],
+              tension: 0.3,
+              borderColor: "rgba(255,255,255,0.5)",
+              backgroundColor: "rgba(255,255,255,0.02)",
+              pointRadius: 0,
+            },
+            {
+              label: "Measured",
+              data: measuredData,
+              tension: 0.3,
+              borderColor: "rgba(0,200,255,0.9)",
+              backgroundColor: "rgba(0,200,255,0.12)",
+              pointRadius: 6,
+            },
+          ],
+        };
+        const opts = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#e6eef8" } } },
+          scales: {
+            x: { ticks: { color: "#dfefff" } },
+            y: { ticks: { color: "#dfefff" } },
+          },
+        };
+        if (mainChart) {
+          mainChart.data = chartData;
+          mainChart.options = opts;
+          mainChart.update();
+        } else {
+          mainChart = new Chart(mainChartEl.getContext("2d"), {
+            type: "line",
+            data: chartData,
+            options: opts,
+          });
+        }
+
+        // update combined storage for possible comparison
+        if (state.mode === "RH")
+          state.rhDatasetStore = {
+            meta: collectMeta(),
+            readings: vals,
+            stats: { mean: m, median: med, sd: sdv, cov: covv },
+          };
+        else
+          state.upvDatasetStore = {
+            meta: collectMeta(),
+            readings: vals,
+            stats: { mean: m, median: med, sd: sdv, cov: covv },
+          };
+        updateCombinedVerdict();
+      }
+
+      function collectMeta() {
+        return {
+          client: document.getElementById("meta-client").value,
+          site: document.getElementById("meta-site").value,
+          building_type: document.getElementById("meta-type").value,
+          concrete_grade: document.getElementById("meta-grade").value,
+          building_age: document.getElementById("meta-age").value,
+          sample_id: document.getElementById("meta-sample").value,
+          tester: document.getElementById("meta-tester").value,
+          date:
+            document.getElementById("meta-date").value ||
+            new Date().toISOString().slice(0, 10),
+          notes: document.getElementById("meta-notes").value,
+        };
+      }
+
+      // Combined verdict (placeholder logic). Replace with IS thresholds & combination rules.
+      function updateCombinedVerdict() {
+        const v = document.getElementById("combined-verdict");
+        if (state.rhDatasetStore && state.upvDatasetStore) {
+          // Simplified rule (placeholder):
+          const rhMean = state.rhDatasetStore.stats.mean;
+          const upvMean = state.upvDatasetStore.stats.mean;
+          // PLACEHOLDER thresholds: adjust to IS standards
+          // Example (NOT REAL): if rhMean > 30 and upvMean > 3.6 => Good; else if rhMean > 25 or upvMean > 3.3 => Medium; else Doubtful
+          let verdict = "Doubtful";
+          if (rhMean > 30 && upvMean > 3.6) verdict = "Good";
+          else if (rhMean > 25 || upvMean > 3.3) verdict = "Medium";
+          else verdict = "Doubtful";
+          v.textContent = verdict;
+        } else v.textContent = "Insufficient data";
+      }
+
+      // Generate PDF: create a printable DOM in #printable then html2canvas -> jsPDF
+      generatePdfBtn.addEventListener("click", async () => {
+        const printable = document.getElementById("printable");
+        const meta = collectMeta();
+        const vals = state.readings.map((r) => r.value);
+        const stats = {
+          mean: mean(vals),
+          median: median(vals),
+          sd: sd(vals),
+          cov: cov(vals),
+        };
+        // build HTML (simple)
+        printable.innerHTML = `
+       <div style="font-family:Inter,Arial,sans-serif;max-width:1000px;margin:0 auto">
+         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+           <div>
+             <h1 style="margin:0">NDT Test Report</h1>
+             <div style="font-size:12px;color:#444">${meta.client} — ${
+          meta.site
+        }</div>
+           </div>
+           <div style="text-align:right;font-size:12px">
+             <div>Sample ID: ${meta.sample_id}</div>
+             <div>Date: ${meta.date}</div>
+             <div>Tester: ${meta.tester}</div>
+           </div>
+         </div>
+         <hr style="border:none;border-top:1px solid #eee;margin:8px 0">
+         <h3>Test: ${state.mode}</h3>
+         <h4>Inputs</h4>
+         <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
+           <tr><td style="padding:6px;border:1px solid #eee">Building type</td><td style="padding:6px;border:1px solid #eee">${
+             meta.building_type
+           }</td></tr>
+           <tr><td style="padding:6px;border:1px solid #eee">Concrete grade</td><td style="padding:6px;border:1px solid #eee">${
+             meta.concrete_grade
+           }</td></tr>
+           <tr><td style="padding:6px;border:1px solid #eee">Notes</td><td style="padding:6px;border:1px solid #eee">${
+             meta.notes || "-"
+           }</td></tr>
+         </table>
+         <h4>Readings</h4>
+         <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
+           <thead><tr><th style="padding:6px;border:1px solid #eee">#</th><th style="padding:6px;border:1px solid #eee">Value</th></tr></thead>
+           <tbody>
+             ${vals
+               .map(
+                 (v, i) =>
+                   `<tr><td style="padding:6px;border:1px solid #eee">${
+                     i + 1
+                   }</td><td style="padding:6px;border:1px solid #eee">${v}</td></tr>`
+               )
+               .join("")}
+           </tbody>
+         </table>
+         <h4>Statistics</h4>
+         <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
+           <tr><td style="padding:6px;border:1px solid #eee">Mean</td><td style="padding:6px;border:1px solid #eee">${
+             stats.mean ? stats.mean.toFixed(3) : "-"
+           }</td></tr>
+           <tr><td style="padding:6px;border:1px solid #eee">Median</td><td style="padding:6px;border:1px solid #eee">${
+             stats.median ? stats.median.toFixed(3) : "-"
+           }</td></tr>
+           <tr><td style="padding:6px;border:1px solid #eee">Std Dev</td><td style="padding:6px;border:1px solid #eee">${
+             stats.sd ? stats.sd.toFixed(3) : "-"
+           }</td></tr>
+           <tr><td style="padding:6px;border:1px solid #eee">CoV</td><td style="padding:6px;border:1px solid #eee">${
+             stats.cov ? (stats.cov * 100).toFixed(2) + "%" : "-"
+           }</td></tr>
+         </table>
+         <h4>Interpretation</h4>
+         <p style="color:#444">VERDICT: ${
+           document.getElementById("combined-verdict").textContent
+         }</p>
+         <p style="color:#444">Rationale: PLACEHOLDER — insert IS clause references & correlation used. (See code comments for where to add exact IS formulas/tables)</p>
+         <h4>Recommendations</h4>
+         <ol>
+           ${document.getElementById("suggestions").innerHTML}
+         </ol>
+         <div style="margin-top:18px;font-size:12px;color:#666">Report generated by RK & team</div>
+       </div>
+     `;
+        // render
+        try {
+          const canvas = await html2canvas(printable, {
+            scale: 2,
+            useCORS: true,
+          });
+          const imgData = canvas.toDataURL("image/png");
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({ unit: "px", format: "a4" });
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imgProps = pdf.getImageProperties(imgData);
+          const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+          pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
+          pdf.save((meta.sample_id || "ndt-report") + ".pdf");
+        } catch (err) {
+          alert("PDF generation failed: " + err.message);
+        }
+      });
+
+      // finalize (demo)
+      finalizeBtn.addEventListener("click", () => {
+        if (state.readings.length < requiredCount) {
+          alert("Minimum readings not met. Cannot finalize.");
+          return;
+        }
+        // demo: simple success
+        alert(
+          "Final verification recorded (demo). Integrate server endpoint to persist results."
+        );
+        // For real deployment: POST to /api/reports with payload including meta and readings
+      });
+
+      // contact form
+      document.getElementById("contact-send").addEventListener("click", () => {
+        const name = document.getElementById("contact-name").value.trim();
+        const email = document.getElementById("contact-email").value.trim();
+        const msg = document.getElementById("contact-msg").value.trim();
+        if (!name || !email || !msg) {
+          alert("Please fill all fields");
+          return;
+        }
+        // Demo: show alert. Replace with fetch('/api/contact', {method:'POST',body:JSON.stringify({...})})
+        alert(
+          "Feedback submitted (demo). Implement webhook to store/send emails."
+        );
+        document.getElementById("contact-form").reset();
+      });
+
+      // persist sample data / sample json
+      const sampleData = {
+        client: "ABC Constructions",
+        site: "Plot 12, Chennai",
+        building_type: "Residential",
+        concrete_grade: "M25",
+        building_age: 2,
+        test_type: "RH",
+        rbh_location: "middle",
+        readings: [32, 34, 31, 33, 35, 30, 32, 34, 33, 31],
+      };
+
+      // small UX touches
+      document
+        .getElementById("logo")
+        .addEventListener(
+          "mouseover",
+          (e) => (e.currentTarget.style.transform = "scale(1.06)")
+        );
+      document
+        .getElementById("logo")
+        .addEventListener(
+          "mouseout",
+          (e) => (e.currentTarget.style.transform = "scale(1)")
+        );
+
+      // init
+      updateModeUI();
+      refreshReadings();
+
+      /* ============================
+      IMPORTANT: PLACEHOLDERS & NOTES
+      ============================
+      1) Insert the exact IS correlation formula or table for Rebound Hammer where chart & 'standardData' are computed.
+         Replace the placeholder linear mapping with the IS-specified relation/lookup.
+
+      2) For UPV, insert the IS velocity bands for classification and mapping velocity->quality/strength.
+
+      3) Thresholds used in combined verdict are placeholders. Replace with IS-specified limits or your lab's acceptance criteria.
+
+      4) PDF: The report contains placeholders for IS clause numbers. Add the appropriate clauses in the printable HTML where indicated.
+
+      5) Backend: For production, implement endpoints:
+         - POST /api/auth -> authenticate users
+         - POST /api/reports -> save report (meta + readings + PDF)
+         - POST /api/contact -> store/send feedback (Google Sheets / SendGrid)
+
+      6) Accessibility: ARIA labels and focus styles are included. Test with keyboard-only navigation and aXe / Lighthouse for additional WCAG checks.
+
+      7) Files & images: This is a single-file demo. For production, split into modules, include static assets, and secure server-side operations.
+
+      8) Sample dataset included above (sampleData). Use it to populate UI or generate a sample PDF.
+
+      Happy to:
+       • Replace placeholders with exact IS clauses if you paste the IS clause/table or allow me to look them up.
+       • Convert this single file into multiple assets, or add server examples (Node/Express) that persist reports and send confirmation emails.
+   */
+    </script>
+  </body>
+</html>
